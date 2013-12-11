@@ -46,8 +46,8 @@ init() {
 
 usage() {
 	echo "usage: git flow release [list] [-v]"
-	echo "       git flow release start [-F] <version> [<base>]"
-	echo "       git flow release finish [-FsumpkS] <version>"
+	echo "       git flow release start [-Fr] <version> [<base>]"
+	echo "       git flow release finish [-FrsumpkS] <version>"
 	echo "       git flow release publish <name>"
 	echo "       git flow release track <name>"
 }
@@ -153,8 +153,14 @@ require_no_existing_release_branches() {
 
 cmd_start() {
 	DEFINE_boolean fetch false "fetch from $ORIGIN before performing finish" F
+	DEFINE_string releasemajor "" "Major release version" r
 	parse_args "$@"
-	BASE=${2:-$DEVELOP_BRANCH}
+        if [ -n "$FLAGS_releasemajor" ]; then
+		DEVELOP_BRANCH=$FLAGS_releasemajor/$DEVELOP_BRANCH
+		BASE=${4:-$DEVELOP_BRANCH}
+	else
+		BASE=${2:-$DEVELOP_BRANCH}
+	fi
 	require_version_arg
 	require_base_is_on_develop
 	require_no_existing_release_branches
@@ -183,12 +189,17 @@ cmd_start() {
 	echo "- Start committing last-minute fixes in preparing your release"
 	echo "- When done, run:"
 	echo
-	echo "     git flow release finish '$VERSION'"
+	if [ -n "$FLAGS_releasemajor" ]; then
+		echo "     git flow release finish -r '$FLAGS_releasemajor' '$VERSION'"
+	else
+		echo "     git flow release finish '$VERSION'"
+	fi
 	echo
 }
 
 cmd_finish() {
 	DEFINE_boolean fetch false "fetch from $ORIGIN before performing finish" F
+	DEFINE_string releasemajor "" "Major release version" r
 	DEFINE_boolean sign false "sign the release tag cryptographically" s
 	DEFINE_string signingkey "" "use the given GPG-key for the digital signature (implies -s)" u
 	DEFINE_string message "" "use the given tag message" m
@@ -204,6 +215,11 @@ cmd_finish() {
 	# handle flags that imply other flags
 	if [ "$FLAGS_signingkey" != "" ]; then
 		FLAGS_sign=$FLAGS_TRUE
+	fi
+
+        if [ -n "$FLAGS_releasemajor" ]; then
+		MASTER_BRANCH=$FLAGS_releasemajor/$MASTER_BRANCH
+		DEVELOP_BRANCH=$FLAGS_releasemajor/$DEVELOP_BRANCH
 	fi
 
 	# sanity checks
