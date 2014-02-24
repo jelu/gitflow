@@ -262,11 +262,12 @@ cmd_finish() {
 		local tagname=$VERSION_PREFIX$VERSION
 		if ! git_tag_exists "$tagname"; then
 			local opts="-a"
+			local optMessage=""
 			flag sign && opts="$opts -s"
 			[ "$FLAGS_signingkey" != "" ] && opts="$opts -u '$FLAGS_signingkey'"
-			[ "$FLAGS_message" != "" ] && opts="$opts -m '$FLAGS_message'"
+			[ "$FLAGS_message" != "" ] && optMessage="-m"
 			[ "$FLAGS_messagefile" != "" ] && opts="$opts -F '$FLAGS_messagefile'"
-			eval git_do tag $opts "$tagname" "$BRANCH" || \
+			git_do tag $opts $optMessage "$FLAGS_message" "$tagname" "$BRANCH" || \
 			die "Tagging failed. Please run finish again to retry."
 		fi
 	fi
